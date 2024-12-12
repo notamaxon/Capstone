@@ -11,8 +11,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 // Angles in degrees
 val ANGLES = listOf(
@@ -28,9 +26,12 @@ val DISTANCES = listOf(0.5, 1.0, 2.0, 3.0, 5.0, 8.0)
 fun MeasurementInputScreen(
     modifier: Modifier = Modifier
 ) {
+    // Maintain a list of sessions with sequential naming
+    var sessionCounter by remember { mutableStateOf(1) }
+    var sessions by remember { mutableStateOf(mutableListOf("session1")) }
+    var selectedSession by remember { mutableStateOf(sessions.first()) }
     var selectedDistance by remember { mutableStateOf(DISTANCES[0]) }
     var selectedAngle by remember { mutableStateOf(ANGLES[0]) }
-    var sessionId by remember { mutableStateOf("Session_${System.currentTimeMillis()}") }
     var measurements by remember { mutableStateOf(listOf<String>()) }
 
     val scrollState = rememberScrollState()
@@ -51,29 +52,55 @@ fun MeasurementInputScreen(
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        // Session Management
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        // Session Selection Dropdown
+        var sessionExpanded by remember { mutableStateOf(false) }
+        ExposedDropdownMenuBox(
+            expanded = sessionExpanded,
+            onExpandedChange = { sessionExpanded = !sessionExpanded }
         ) {
-            Text(
-                text = "Session ID:",
-                style = MaterialTheme.typography.bodyLarge
+            TextField(
+                value = selectedSession,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Select Session") },
+                trailingIcon = {
+                    ExposedDropdownMenuDefaults.TrailingIcon(
+                        expanded = sessionExpanded
+                    )
+                },
+                modifier = Modifier
+                    .menuAnchor()
+                    .fillMaxWidth()
             )
-            Text(
-                text = sessionId,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.weight(1f)
-            )
-            IconButton(
-                onClick = {
-                    sessionId = "Session_${System.currentTimeMillis()}"
-                }
+
+            ExposedDropdownMenu(
+                expanded = sessionExpanded,
+                onDismissRequest = { sessionExpanded = false }
             ) {
-                Icon(
-                    imageVector = Icons.Default.Clear,
-                    contentDescription = "Reset Session"
+                // Existing sessions
+                sessions.forEach { session ->
+                    DropdownMenuItem(
+                        text = { Text(session) },
+                        onClick = {
+                            selectedSession = session
+                            sessionExpanded = false
+                        }
+                    )
+                }
+
+                // Divider to separate existing sessions from new session option
+                HorizontalDivider()
+
+                // Option to create a new session
+                DropdownMenuItem(
+                    text = { Text("Create New Session") },
+                    onClick = {
+                        sessionCounter++
+                        val newSession = "session$sessionCounter"
+                        sessions.add(newSession)
+                        selectedSession = newSession
+                        sessionExpanded = false
+                    }
                 )
             }
         }
@@ -155,10 +182,10 @@ fun MeasurementInputScreen(
         // Start Measurement Button
         Button(
             onClick = {
-                val timestamp = LocalDateTime.now()
-                    .format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                val timestamp = java.time.LocalDateTime.now()
+                    .format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME)
 
-                val measurementLabel = "[$sessionId] Distance: $selectedDistance m, Angle: $selectedAngle°, Time: $timestamp"
+                val measurementLabel = "[$selectedSession] Distance: $selectedDistance m, Angle: $selectedAngle°, Time: $timestamp"
                 measurements = measurements + measurementLabel
             },
             modifier = Modifier.fillMaxWidth()
