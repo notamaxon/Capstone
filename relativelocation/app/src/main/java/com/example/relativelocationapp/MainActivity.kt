@@ -36,7 +36,7 @@ class MainActivity : ComponentActivity() {
         }
 
         lifecycleScope.launch {
-            val sessionName = "session1" // Example session
+            val sessionName = "session3" // Example session
             addMeasurement(sessionName)
 //            addMeasurement(sessionName)
 //            fetchMeasurements(sessionName)
